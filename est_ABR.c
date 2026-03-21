@@ -63,12 +63,12 @@ int infixe_croissant(Arbre a, Noeud ** dernier_noeud, long long * nb_visites){
     if (!a)
         return 1;
     (*nb_visites)++;
-    if (!infixe_croissant(a->fg, dernier_noeud))
+    if (!infixe_croissant(a->fg, dernier_noeud, nb_visites))
         return 0;
     if (*dernier_noeud && (*dernier_noeud)->valeur >= a->valeur)
         return 0;
     *dernier_noeud = a;
-    return infixe_croissant(a->fd, dernier_noeud);
+    return infixe_croissant(a->fd, dernier_noeud, nb_visites);
 }
 
 int est_abr_infixe(Arbre a, long long * nb_visites){
