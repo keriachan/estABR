@@ -10,6 +10,14 @@ Arbre alloue_noeud(int val){
     return A;
 }
 
+void liberer_arbre(Arbre a){
+    if (!a)
+        return;
+    liberer_arbre(a->fg);
+    liberer_arbre(a->fd);
+    free(a);
+}
+
 int hauteur(Arbre A){
     if (!A)
         return -1;

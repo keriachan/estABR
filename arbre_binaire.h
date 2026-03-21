@@ -12,6 +12,10 @@ typedef struct noeud {
 /* Alloue un nouveau noeud en mémoire */
 Arbre alloue_noeud(int val);
 
+/* Libere la mémoire utilisé par l'arbre a;
+ */
+void liberer_arbre(Arbre a);
+
 /* Renvoie la hauteur de l'arbre 
  * (-1 pour un arbre vide) */
 int hauteur(Arbre A);
