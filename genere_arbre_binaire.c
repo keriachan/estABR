@@ -1,9 +1,95 @@
 #include "genere_arbre_binaire.h"
+#include <stdlib.h>
 
-int construit_quelconque(Arbre * a, int ** codage, int n){
+/* Génère taille entiers strictement croissants distincts dans tab.
+ * Les valeurs sont aléatoires mais garanties sans doublon ni débordement
+ * pour des tailles raisonnables (taille <= 500 000). 
+ */
+static void genere_trie(int * tab, int taille) {
+    if (taille <= 0) 
+        return;
+    tab[0] = rand() % 100;
+    for (int i = 1; i < taille; i++)
+        tab[i] = tab[i-1] + 1 + rand() % 10;
+}
+
+/* Construit récursivement un arbre presque complet depuis le tableau infixe
+ * de taille n. L'arbre résultant est un ABR si et seulement si infixe est
+ * trié. Renvoie NULL en cas d'échec d'allocation. 
+ */
+static Arbre construit_depuis_infixe_presque_complet(int * infixe, int n) {
+    if (n == 0) 
+        return NULL;
+    int gauche = nb_noeuds_gauche(n);
+    Arbre a = alloue_noeud(infixe[gauche]);
+    if (!a) 
+        return NULL;
+    a->fg = construit_depuis_infixe_presque_complet(infixe, gauche);
+    a->fd = construit_depuis_infixe_presque_complet(infixe + gauche + 1, n - gauche - 1);
+    if ((gauche > 0 && !a->fg) || (n - gauche - 1 > 0 && !a->fd)) {
+        liberer_arbre(a->fg);
+        liberer_arbre(a->fd);
+        free(a);
+        return NULL;
+    }
+    return a;
+}
+
+/* Construit récursivement un arbre filiforme depuis le tableau infixe de
+ * taille n, en choisissant aléatoirement la direction à chaque noeud.
+ * L'arbre résultant est un ABR si et seulement si infixe est trié.
+ * Renvoie NULL en cas d'échec d'allocation. 
+ */
+static Arbre construit_depuis_infixe_filiforme(int * infixe, int n) {
+    if (n == 0) 
+        return NULL;
+    if (n == 1) 
+        return alloue_noeud(infixe[0]);
+    Arbre a;
+    if (rand() % 2 == 0) {
+        a = alloue_noeud(infixe[0]);
+        if (!a) 
+            return NULL;
+        a->fg = NULL;
+        a->fd = construit_depuis_infixe_filiforme(infixe + 1, n - 1);
+        if (!a->fd && n - 1 > 0) { 
+            free(a); 
+            return NULL; 
+        }
+    } else {
+        a = alloue_noeud(infixe[n - 1]);
+        if (!a) 
+            return NULL;
+        a->fd = NULL;
+        a->fg = construit_depuis_infixe_filiforme(infixe, n - 1);
+        if (!a->fg && n - 1 > 0) { 
+            free(a); 
+            return NULL; 
+        }
+    }
+    return a;
+}
+
+/* Remplit récursivement le tableau codage (taille 2*n+1) avec le codage
+ * préfixe d'un arbre quelconque aléatoire dont l'infixe vaut infixe[0..n-1].
+ * Renvoie le nombre de cases remplies dans codage. 
+ */
+static int infixe_vers_codage_quelconque(int * codage, int * infixe, int n) {
+    if (n == 0) {
+        codage[0] = -1;
+        return 1;
+    }
+    int k = rand() % n;
+    codage[0] = infixe[k];
+    int gauche = infixe_vers_codage_quelconque(codage + 1, infixe, k);
+    int droite = infixe_vers_codage_quelconque(codage + 1 + gauche, infixe + k + 1, n - k - 1);
+    return 1 + gauche + droite;
+}
+
+int construit_quelconque(Arbre * a, int ** codage, int n) {
     if (n <= 0)
         return 0;
-    if (**codage == -1){
+    if (**codage == -1) {
         *a = NULL;
         (*codage)++;
         return 1;
@@ -25,4 +111,154 @@ int construit_quelconque(Arbre * a, int ** codage, int n){
         return 0;
     }
     return 1;
+}
+
+int nb_noeuds_gauche(int n) {
+    if (n <= 1) 
+        return 0;
+    int h = 0;
+    while ((1 << (h + 1)) <= n) {
+        h++;
+    }
+    int avant_der_gauche = (1 << (h - 1)) - 1;
+    int dernier = n - ((1 << h) - 1);
+    int max_dernier_gauche = 1 << (h - 1);
+    int dernier_gauche = dernier < max_dernier_gauche ? dernier : max_dernier_gauche;
+    return avant_der_gauche + dernier_gauche;
+}
+
+void parcours_infixe_2_prefixe_presque_complet(int * prefixe, int * infixe, int n) {
+    if (n == 0) 
+        return;
+    int gauche = nb_noeuds_gauche(n);
+    prefixe[0] = infixe[gauche];
+    parcours_infixe_2_prefixe_presque_complet(prefixe + 1, infixe, gauche);
+    parcours_infixe_2_prefixe_presque_complet(prefixe + 1 + gauche, infixe + gauche + 1, n - gauche - 1);
+}
+
+void parcours_infixe_2_prefixe_filiforme_aleatoire(int * prefixe, int * infixe, int n) {
+    if (n == 0) 
+        return;
+    if (n == 1) { 
+        prefixe[0] = infixe[0]; 
+        return; 
+    }
+    if (rand() % 2 == 0) {
+        prefixe[0] = infixe[0];
+        parcours_infixe_2_prefixe_filiforme_aleatoire(prefixe + 1, infixe + 1, n - 1);
+    } else {
+        prefixe[0] = infixe[n - 1];
+        parcours_infixe_2_prefixe_filiforme_aleatoire(prefixe + 1, infixe, n - 1);
+    }
+}
+
+void parcours_infixe_2_prefixe_quelconque_aleatoire(int * codage, int * infixe, int n) {
+    infixe_vers_codage_quelconque(codage, infixe, n);
+}
+
+int ABR_presque_complet_alea(Arbre * a, int taille) {
+    if (taille <= 0) {
+        *a = NULL; 
+        return 1; 
+    }
+    int * infixe = malloc(taille * sizeof(int));
+    if (!infixe) 
+        return 0;
+    genere_trie(infixe, taille);
+    *a = construit_depuis_infixe_presque_complet(infixe, taille);
+    free(infixe);
+    return (*a != NULL || taille == 0);
+}
+
+int non_ABR_presque_complet_alea(Arbre * a, int taille) {
+    if (taille < 2) { 
+        *a = NULL; 
+        return 0; 
+    }
+    int * infixe = malloc(taille * sizeof(int));
+    if (!infixe) 
+        return 0;
+    genere_trie(infixe, taille);
+    int tmp = infixe[0];
+    infixe[0] = infixe[taille - 1];
+    infixe[taille - 1] = tmp;
+    *a = construit_depuis_infixe_presque_complet(infixe, taille);
+    free(infixe);
+    return (*a != NULL);
+}
+
+int ABR_filiforme_alea(Arbre * a, int taille) {
+    if (taille <= 0) { 
+        *a = NULL; 
+        return 1; 
+    }
+    int * infixe = malloc(taille * sizeof(int));
+    if (!infixe) 
+        return 0;
+    genere_trie(infixe, taille);
+    *a = construit_depuis_infixe_filiforme(infixe, taille);
+    free(infixe);
+    return (*a != NULL || taille == 0);
+}
+
+int non_ABR_filiforme_alea(Arbre * a, int taille) {
+    if (taille < 2) { 
+        *a = NULL; 
+        return 0; 
+    }
+    int * infixe = malloc(taille * sizeof(int));
+    if (!infixe) 
+        return 0;
+    genere_trie(infixe, taille);
+    int tmp = infixe[0];
+    infixe[0] = infixe[taille - 1];
+    infixe[taille - 1] = tmp;
+    *a = construit_depuis_infixe_filiforme(infixe, taille);
+    free(infixe);
+    return (*a != NULL);
+}
+
+int ABR_quelconque_alea(Arbre * a, int taille) {
+    if (taille <= 0) { 
+        *a = NULL; 
+        return 1; 
+    }
+    int * infixe = malloc(taille * sizeof(int));
+    int * codage = malloc((2 * taille + 1) * sizeof(int));
+    if (!infixe || !codage) { 
+        free(infixe); 
+        free(codage); 
+        return 0; 
+    }
+    genere_trie(infixe, taille);
+    parcours_infixe_2_prefixe_quelconque_aleatoire(codage, infixe, taille);
+    free(infixe);
+    int * ptr = codage;
+    int res = construit_quelconque(a, &ptr, 2 * taille + 1);
+    free(codage);
+    return res;
+}
+
+int non_ABR_quelconque_alea(Arbre * a, int taille) {
+    if (taille < 2) { 
+        *a = NULL; 
+        return 0; 
+    }
+    int * infixe = malloc(taille * sizeof(int));
+    int * codage = malloc((2 * taille + 1) * sizeof(int));
+    if (!infixe || !codage) { 
+        free(infixe); 
+        free(codage); 
+        return 0; 
+    }
+    genere_trie(infixe, taille);
+    int tmp = infixe[0];
+    infixe[0] = infixe[taille - 1];
+    infixe[taille - 1] = tmp;
+    parcours_infixe_2_prefixe_quelconque_aleatoire(codage, infixe, taille);
+    free(infixe);
+    int * ptr = codage;
+    int res = construit_quelconque(a, &ptr, 2 * taille + 1);
+    free(codage);
+    return res;
 }
