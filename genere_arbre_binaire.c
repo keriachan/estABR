@@ -13,63 +13,6 @@ static void genere_trie(int * tab, int taille) {
         tab[i] = tab[i-1] + 1 + rand() % 10;
 }
 
-/* Construit récursivement un arbre presque complet depuis le tableau infixe
- * de taille n. L'arbre résultant est un ABR si et seulement si infixe est
- * trié. Renvoie NULL en cas d'échec d'allocation. 
- */
-static Arbre construit_depuis_infixe_presque_complet(int * infixe, int n) {
-    if (n == 0) 
-        return NULL;
-    int gauche = nb_noeuds_gauche(n);
-    Arbre a = alloue_noeud(infixe[gauche]);
-    if (!a) 
-        return NULL;
-    a->fg = construit_depuis_infixe_presque_complet(infixe, gauche);
-    a->fd = construit_depuis_infixe_presque_complet(infixe + gauche + 1, n - gauche - 1);
-    if ((gauche > 0 && !a->fg) || (n - gauche - 1 > 0 && !a->fd)) {
-        liberer_arbre(a->fg);
-        liberer_arbre(a->fd);
-        free(a);
-        return NULL;
-    }
-    return a;
-}
-
-/* Construit récursivement un arbre filiforme depuis le tableau infixe de
- * taille n, en choisissant aléatoirement la direction à chaque noeud.
- * L'arbre résultant est un ABR si et seulement si infixe est trié.
- * Renvoie NULL en cas d'échec d'allocation. 
- */
-static Arbre construit_depuis_infixe_filiforme(int * infixe, int n) {
-    if (n == 0) 
-        return NULL;
-    if (n == 1) 
-        return alloue_noeud(infixe[0]);
-    Arbre a;
-    if (rand() % 2 == 0) {
-        a = alloue_noeud(infixe[0]);
-        if (!a) 
-            return NULL;
-        a->fg = NULL;
-        a->fd = construit_depuis_infixe_filiforme(infixe + 1, n - 1);
-        if (!a->fd && n - 1 > 0) { 
-            free(a); 
-            return NULL; 
-        }
-    } else {
-        a = alloue_noeud(infixe[n - 1]);
-        if (!a) 
-            return NULL;
-        a->fd = NULL;
-        a->fg = construit_depuis_infixe_filiforme(infixe, n - 1);
-        if (!a->fg && n - 1 > 0) { 
-            free(a); 
-            return NULL; 
-        }
-    }
-    return a;
-}
-
 /* Convertit un tableau préfixe d'un arbre presque complet à n noeuds en un
  * codage utilisable par construit_quelconque (valeurs + -1 pour vides).
  * La structure est entièrement déterminée par n : on sait exactement combien
