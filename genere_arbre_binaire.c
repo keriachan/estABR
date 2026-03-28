@@ -70,6 +70,57 @@ static Arbre construit_depuis_infixe_filiforme(int * infixe, int n) {
     return a;
 }
 
+/* Convertit un tableau préfixe d'un arbre presque complet à n noeuds en un
+ * codage utilisable par construit_quelconque (valeurs + -1 pour vides).
+ * La structure est entièrement déterminée par n : on sait exactement combien
+ * de noeuds sont à gauche (nb_noeuds_gauche) et à droite, donc on place les
+ * -1 aux bons endroits sans avoir besoin de l'infixe.
+ * Le codage résultant a toujours 2*n+1 entrées. 
+ */
+static int prefixe_presque_complet_vers_codage(int * codage, int * prefixe, int n) {
+    if (n == 0) { 
+        codage[0] = -1; 
+        return 1; 
+    }
+    int gauche = nb_noeuds_gauche(n);
+    codage[0] = prefixe[0];
+    int ecriture = 1;
+    ecriture += prefixe_presque_complet_vers_codage(codage + ecriture, prefixe + 1, gauche);
+    ecriture += prefixe_presque_complet_vers_codage(codage + ecriture, prefixe + 1 + gauche, n - gauche - 1);
+    return ecriture;
+}
+
+/* Convertit un tableau préfixe d'un arbre filiforme à n noeuds en un
+ * codage utilisable par construit_quelconque (valeurs + -1 pour vides).
+ * La forme a été choisie par parcours_infixe_2_prefixe_filiforme_aleatoire :
+ * si prefixe[0] == infixe[0], la racine n'a pas de fils gauche (fils droit
+ * seulement) ; sinon elle n'a pas de fils droit (fils gauche seulement).
+ * Le codage résultant a toujours 2*n+1 entrées. 
+ */
+static int prefixe_filiforme_vers_codage(int * codage, int * prefixe, int * infixe, int n) {
+    if (n == 0) { 
+        codage[0] = -1; 
+        return 1; 
+    }
+    if (n == 1) {
+        codage[0] = prefixe[0];
+        codage[1] = -1;
+        codage[2] = -1;
+        return 3;
+    }
+    codage[0] = prefixe[0];
+    int ecriture = 1;
+ 
+    if (prefixe[0] == infixe[0]) {
+        codage[ecriture++] = -1;
+        ecriture += prefixe_filiforme_vers_codage(codage + ecriture, prefixe + 1, infixe + 1, n - 1);
+    } else {
+        ecriture += prefixe_filiforme_vers_codage(codage + ecriture, prefixe + 1, infixe, n - 1);
+        codage[ecriture++] = -1;
+    }
+    return ecriture;
+}
+
 /* Remplit récursivement le tableau codage (taille 2*n+1) avec le codage
  * préfixe d'un arbre quelconque aléatoire dont l'infixe vaut infixe[0..n-1].
  * Renvoie le nombre de cases remplies dans codage. 
@@ -157,48 +208,84 @@ void parcours_infixe_2_prefixe_quelconque_aleatoire(int * codage, int * infixe, 
 }
 
 int ABR_presque_complet_alea(Arbre * a, int taille) {
-    if (taille <= 0) {
-        *a = NULL; 
-        return 1; 
-    }
-    int * infixe = malloc(taille * sizeof(int));
-    if (!infixe) 
-        return 0;
-    genere_trie(infixe, taille);
-    *a = construit_depuis_infixe_presque_complet(infixe, taille);
-    free(infixe);
-    return (*a != NULL || taille == 0);
-}
-
-int non_ABR_presque_complet_alea(Arbre * a, int taille) {
-    if (taille < 2) { 
-        *a = NULL; 
-        return 0; 
-    }
-    int * infixe = malloc(taille * sizeof(int));
-    if (!infixe) 
-        return 0;
-    genere_trie(infixe, taille);
-    int tmp = infixe[0];
-    infixe[0] = infixe[taille - 1];
-    infixe[taille - 1] = tmp;
-    *a = construit_depuis_infixe_presque_complet(infixe, taille);
-    free(infixe);
-    return (*a != NULL);
-}
-
-int ABR_filiforme_alea(Arbre * a, int taille) {
     if (taille <= 0) { 
         *a = NULL; 
         return 1; 
     }
-    int * infixe = malloc(taille * sizeof(int));
-    if (!infixe) 
+    int * infixe  = malloc(taille * sizeof(int));
+    int * prefixe = malloc(taille * sizeof(int));
+    int * codage  = malloc((2 * taille + 1) * sizeof(int));
+    if (!infixe || !prefixe || !codage) {
+        free(infixe); 
+        free(prefixe); 
+        free(codage); 
         return 0;
+    }
     genere_trie(infixe, taille);
-    *a = construit_depuis_infixe_filiforme(infixe, taille);
-    free(infixe);
-    return (*a != NULL || taille == 0);
+    parcours_infixe_2_prefixe_presque_complet(prefixe, infixe, taille);
+    prefixe_presque_complet_vers_codage(codage, prefixe, taille);
+    free(infixe); 
+    free(prefixe);
+    int * ptr = codage;
+    int res = construit_quelconque(a, &ptr, 2 * taille + 1);
+    free(codage);
+    return res;
+}
+
+int non_ABR_presque_complet_alea(Arbre * a, int taille) {
+    if (taille < 2) { *a = NULL; return 0; }
+    int * infixe  = malloc(taille * sizeof(int));
+    int * prefixe = malloc(taille * sizeof(int));
+    int * codage  = malloc((2 * taille + 1) * sizeof(int));
+    if (!infixe || !prefixe || !codage) {
+        free(infixe); 
+        free(prefixe); 
+        free(codage); 
+        return 0;
+    }
+    genere_trie(infixe, taille);
+    int tmp = infixe[0];
+    infixe[0] = infixe[taille - 1];
+    infixe[taille - 1] = tmp;
+    parcours_infixe_2_prefixe_presque_complet(prefixe, infixe, taille);
+    prefixe_presque_complet_vers_codage(codage, prefixe, taille);
+    free(infixe); 
+    free(prefixe);
+    int * ptr = codage;
+    int res = construit_quelconque(a, &ptr, 2 * taille + 1);
+    free(codage);
+    return res;
+}
+
+int ABR_filiforme_alea(Arbre * a, int taille) {
+    if (taille <= 0) { *a = NULL; return 1; }
+    int * infixe  = malloc(taille * sizeof(int));
+    int * prefixe = malloc(taille * sizeof(int));
+    int * codage  = malloc((2 * taille + 1) * sizeof(int));
+    if (!infixe || !prefixe || !codage) {
+        free(infixe); 
+        free(prefixe); 
+        free(codage); 
+        return 0;
+    }
+    genere_trie(infixe, taille);
+    int * infixe_orig = malloc(taille * sizeof(int));
+    if (!infixe_orig) { 
+        free(infixe); 
+        free(prefixe); 
+        free(codage); 
+        return 0; 
+    }
+    for (int i = 0; i < taille; i++) infixe_orig[i] = infixe[i];
+    parcours_infixe_2_prefixe_filiforme_aleatoire(prefixe, infixe, taille);
+    prefixe_filiforme_vers_codage(codage, prefixe, infixe_orig, taille);
+    free(infixe); 
+    free(prefixe); 
+    free(infixe_orig);
+    int * ptr = codage;
+    int res = construit_quelconque(a, &ptr, 2 * taille + 1);
+    free(codage);
+    return res;
 }
 
 int non_ABR_filiforme_alea(Arbre * a, int taille) {
@@ -206,16 +293,37 @@ int non_ABR_filiforme_alea(Arbre * a, int taille) {
         *a = NULL; 
         return 0; 
     }
-    int * infixe = malloc(taille * sizeof(int));
-    if (!infixe) 
+    int * infixe  = malloc(taille * sizeof(int));
+    int * prefixe = malloc(taille * sizeof(int));
+    int * codage  = malloc((2 * taille + 1) * sizeof(int));
+    if (!infixe || !prefixe || !codage) {
+        free(infixe); 
+        free(prefixe); 
+        free(codage); 
         return 0;
+    }
     genere_trie(infixe, taille);
     int tmp = infixe[0];
     infixe[0] = infixe[taille - 1];
     infixe[taille - 1] = tmp;
-    *a = construit_depuis_infixe_filiforme(infixe, taille);
-    free(infixe);
-    return (*a != NULL);
+    int * infixe_orig = malloc(taille * sizeof(int));
+    if (!infixe_orig) { 
+        free(infixe); 
+        free(prefixe); 
+        free(codage); 
+        return 0; 
+    }
+    for (int i = 0; i < taille; i++) 
+        infixe_orig[i] = infixe[i];
+    parcours_infixe_2_prefixe_filiforme_aleatoire(prefixe, infixe, taille);
+    prefixe_filiforme_vers_codage(codage, prefixe, infixe_orig, taille);
+    free(infixe); 
+    free(prefixe); 
+    free(infixe_orig);
+    int * ptr = codage;
+    int res = construit_quelconque(a, &ptr, 2 * taille + 1);
+    free(codage);
+    return res;
 }
 
 int ABR_quelconque_alea(Arbre * a, int taille) {
