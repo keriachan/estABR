@@ -1,10 +1,6 @@
 #include "genere_arbre_binaire.h"
 #include <stdlib.h>
 
-/* Génère taille entiers strictement croissants distincts dans tab.
- * Les valeurs sont aléatoires mais garanties sans doublon ni débordement
- * pour des tailles raisonnables (taille <= 500 000). 
- */
 static void genere_trie(int * tab, int taille) {
     if (taille <= 0) 
         return;
@@ -13,13 +9,6 @@ static void genere_trie(int * tab, int taille) {
         tab[i] = tab[i-1] + 1 + rand() % 10;
 }
 
-/* Convertit un tableau préfixe d'un arbre presque complet à n noeuds en un
- * codage utilisable par construit_quelconque (valeurs + -1 pour vides).
- * La structure est entièrement déterminée par n : on sait exactement combien
- * de noeuds sont à gauche (nb_noeuds_gauche) et à droite, donc on place les
- * -1 aux bons endroits sans avoir besoin de l'infixe.
- * Le codage résultant a toujours 2*n+1 entrées. 
- */
 static int prefixe_presque_complet_vers_codage(int * codage, int * prefixe, int n) {
     if (n == 0) { 
         codage[0] = -1; 
@@ -33,13 +22,6 @@ static int prefixe_presque_complet_vers_codage(int * codage, int * prefixe, int 
     return ecriture;
 }
 
-/* Convertit un tableau préfixe d'un arbre filiforme à n noeuds en un
- * codage utilisable par construit_quelconque (valeurs + -1 pour vides).
- * La forme a été choisie par parcours_infixe_2_prefixe_filiforme_aleatoire :
- * si prefixe[0] == infixe[0], la racine n'a pas de fils gauche (fils droit
- * seulement) ; sinon elle n'a pas de fils droit (fils gauche seulement).
- * Le codage résultant a toujours 2*n+1 entrées. 
- */
 static int prefixe_filiforme_vers_codage(int * codage, int * prefixe, int * infixe, int n) {
     if (n == 0) { 
         codage[0] = -1; 
@@ -64,10 +46,6 @@ static int prefixe_filiforme_vers_codage(int * codage, int * prefixe, int * infi
     return ecriture;
 }
 
-/* Remplit récursivement le tableau codage (taille 2*n+1) avec le codage
- * préfixe d'un arbre quelconque aléatoire dont l'infixe vaut infixe[0..n-1].
- * Renvoie le nombre de cases remplies dans codage. 
- */
 static int infixe_vers_codage_quelconque(int * codage, int * infixe, int n) {
     if (n == 0) {
         codage[0] = -1;
