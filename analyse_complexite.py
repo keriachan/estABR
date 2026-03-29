@@ -7,8 +7,6 @@ import numpy as np
 
 CSV_FILE = "mesures.csv"
 
-# ── Lecture du CSV ───────────────────────────────────────────────────────────
-
 def lire_csv(fichier):
     """Retourne les données sous la forme d'un dict imbriqué :
        donnees[morphologie][methode] = {"tailles": [...], "nb_visites": [...], "temps": [...]}
@@ -41,13 +39,10 @@ def moyenne_par_taille(tailles, valeurs):
     valeurs_moy = [np.mean(agregat[t]) for t in tailles_moy]
     return tailles_moy, valeurs_moy
 
-
-# ── Paramètres graphiques ────────────────────────────────────────────────────
-
 COULEURS_METHODES = {
-    "Naif":       "#e74c3c",   # rouge
-    "Definition": "#2980b9",   # bleu
-    "Infixe":     "#27ae60",   # vert
+    "Naif":       "#e74c3c",
+    "Definition": "#2980b9",
+    "Infixe":     "#27ae60",
 }
 STYLES_METHODES = {
     "Naif":       "-o",
@@ -92,10 +87,7 @@ def plot_methodes(ax, donnees_morpho, metrique, echelle, titre):
         ax.set_yscale("log")
     ax.grid(True, which="both", linestyle=":", alpha=0.5)
     ax.legend(fontsize=8)
-
-
-# ── Figures principales ──────────────────────────────────────────────────────
-
+    
 def figure_toutes_morphologies(donnees, metrique, echelle, nom_fichier):
     """6 sous-graphes (une par morphologie) pour une métrique et une échelle."""
     fig, axes = plt.subplots(2, 3, figsize=(16, 9))
@@ -116,7 +108,6 @@ def figure_toutes_morphologies(donnees, metrique, echelle, nom_fichier):
     print(f"Figure enregistrée : {nom_fichier}")
     plt.close(fig)
 
-
 def figure_comparaison_morphologies(donnees, methode, metrique, echelle, nom_fichier):
     """Compare toutes les morphologies pour une seule méthode."""
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -134,7 +125,6 @@ def figure_comparaison_morphologies(donnees, methode, metrique, echelle, nom_fic
                 color=cmap(i),
                 label=TITRES[morpho],
                 linewidth=1.8, markersize=5)
-
     if echelle == "log":
         ax.set_xscale("log")
         ax.set_yscale("log")
@@ -149,49 +139,19 @@ def figure_comparaison_morphologies(donnees, methode, metrique, echelle, nom_fic
     print(f"Figure enregistrée : {nom_fichier}")
     plt.close(fig)
 
-
-# ── Entrée principale ────────────────────────────────────────────────────────
-
 def main():
     donnees = lire_csv(CSV_FILE)
-
     if not donnees:
         print("Aucune donnée trouvée dans le CSV.")
         return
-
-    # 1. Nœuds visités – échelle linéaire
-    figure_toutes_morphologies(
-        donnees, "nb_visites", "linear",
-        "visites_lineaire.png"
-    )
-
-    # 2. Nœuds visités – échelle log-log
-    figure_toutes_morphologies(
-        donnees, "nb_visites", "log",
-        "visites_log.png"
-    )
-
-    # 3. Temps – échelle linéaire
-    figure_toutes_morphologies(
-        donnees, "temps", "linear",
-        "temps_lineaire.png"
-    )
-
-    # 4. Temps – échelle log-log
-    figure_toutes_morphologies(
-        donnees, "temps", "log",
-        "temps_log.png"
-    )
-
-    # 5. Comparaison morphologies par méthode (nœuds visités, log)
+    figure_toutes_morphologies(donnees, "nb_visites", "linear", "visites_lineaire.png")
+    figure_toutes_morphologies(donnees, "nb_visites", "log", "visites_log.png")
+    figure_toutes_morphologies(donnees, "temps", "linear", "temps_lineaire.png")
+    figure_toutes_morphologies(donnees, "temps", "log", "temps_log.png")
     for methode in ["Naif", "Definition", "Infixe"]:
-        figure_comparaison_morphologies(
-            donnees, methode, "nb_visites", "log",
-            f"morphologies_{methode.lower()}_log.png"
-        )
-
+        figure_comparaison_morphologies(donnees, methode, "nb_visites", "log", f"morphologies_{methode.lower()}_log.png")
+        figure_comparaison_morphologies(donnees, methode, "nb_visites", "linear", f"morphologies_{methode.lower()}_lineaire.png")
     print("\nAnalyse terminée. Fichiers PNG générés dans le répertoire courant.")
-
 
 if __name__ == "__main__":
     main()

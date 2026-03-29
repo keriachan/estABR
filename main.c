@@ -67,41 +67,28 @@ int main(void) {
                 if (!GENERATEURS[m](&a, n)) {
                     fprintf(stderr, "  [WARN] Echec de génération pour %s, taille=%d, rep=%d\n", MORPHOLOGIES[m], n, rep);
                     continue;
-                }
-
-                /* --- Méthode 0 : Naïf --- */
-                {
-                    long long nb = 0;
-                    clock_t t0 = clock();
-                    est_abr_naif(a, &nb);
-                    clock_t t1 = clock();
-                    double temps = (double)(t1 - t0) / CLOCKS_PER_SEC;
-                    fprintf(csv, "%d;%s;%s;%lld;%.9f\n",
-                            n, MORPHOLOGIES[m], METHODES[0], nb, temps);
-                }
-
-                /* --- Méthode 1 : Définition --- */
-                {
-                    long long nb = 0;
-                    clock_t t0 = clock();
-                    est_abr_definition(a, &nb);
-                    clock_t t1 = clock();
-                    double temps = (double)(t1 - t0) / CLOCKS_PER_SEC;
-                    fprintf(csv, "%d;%s;%s;%lld;%.9f\n",
-                            n, MORPHOLOGIES[m], METHODES[1], nb, temps);
-                }
-
-                /* --- Méthode 2 : Infixe --- */
-                {
-                    long long nb = 0;
-                    clock_t t0 = clock();
-                    est_abr_infixe(a, &nb);
-                    clock_t t1 = clock();
-                    double temps = (double)(t1 - t0) / CLOCKS_PER_SEC;
-                    fprintf(csv, "%d;%s;%s;%lld;%.9f\n",
-                            n, MORPHOLOGIES[m], METHODES[2], nb, temps);
-                }
-
+                    
+                long long nb = 0;
+                clock_t t0 = clock();
+                est_abr_naif(a, &nb);
+                clock_t t1 = clock();
+                double temps = (double)(t1 - t0) / CLOCKS_PER_SEC;
+                fprintf(csv, "%d;%s;%s;%lld;%.9f\n", n, MORPHOLOGIES[m], METHODES[0], nb, temps);
+                
+                long long nb = 0;
+                clock_t t0 = clock();
+                est_abr_definition(a, &nb);
+                clock_t t1 = clock();
+                double temps = (double)(t1 - t0) / CLOCKS_PER_SEC;
+                fprintf(csv, "%d;%s;%s;%lld;%.9f\n", n, MORPHOLOGIES[m], METHODES[1], nb, temps);
+                    
+                long long nb = 0;
+                clock_t t0 = clock();
+                est_abr_infixe(a, &nb);
+                clock_t t1 = clock();
+                double temps = (double)(t1 - t0) / CLOCKS_PER_SEC;
+                fprintf(csv, "%d;%s;%s;%lld;%.9f\n", n, MORPHOLOGIES[m], METHODES[2], nb, temps);
+                
                 liberer_arbre(a);
             }
         }
