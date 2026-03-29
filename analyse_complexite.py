@@ -8,9 +8,6 @@ import numpy as np
 CSV_FILE = "mesures.csv"
 
 def lire_csv(fichier):
-    """Retourne les données sous la forme d'un dict imbriqué :
-       donnees[morphologie][methode] = {"tailles": [...], "nb_visites": [...], "temps": [...]}
-    """
     donnees = defaultdict(lambda: defaultdict(lambda: {"tailles": [], "nb_visites": [], "temps": []}))
     try:
         with open(fichier, newline="", encoding="utf-8") as f:
@@ -31,7 +28,6 @@ def lire_csv(fichier):
 
 
 def moyenne_par_taille(tailles, valeurs):
-    """Agrège plusieurs mesures pour la même taille en calculant la moyenne."""
     agregat = defaultdict(list)
     for t, v in zip(tailles, valeurs):
         agregat[t].append(v)
@@ -64,7 +60,6 @@ TITRES = {
 
 
 def plot_methodes(ax, donnees_morpho, metrique, echelle, titre):
-    """Trace sur un axe ax les trois méthodes pour une morphologie donnée."""
     for methode in ["Naif", "Definition", "Infixe"]:
         if methode not in donnees_morpho:
             continue
@@ -89,7 +84,6 @@ def plot_methodes(ax, donnees_morpho, metrique, echelle, titre):
     ax.legend(fontsize=8)
     
 def figure_toutes_morphologies(donnees, metrique, echelle, nom_fichier):
-    """6 sous-graphes (une par morphologie) pour une métrique et une échelle."""
     fig, axes = plt.subplots(2, 3, figsize=(16, 9))
     morphologies = MORPHOLOGIES_ABR + MORPHOLOGIES_NON_ABR
     for ax, morpho in zip(axes.flat, morphologies):
@@ -109,7 +103,6 @@ def figure_toutes_morphologies(donnees, metrique, echelle, nom_fichier):
     plt.close(fig)
 
 def figure_comparaison_morphologies(donnees, methode, metrique, echelle, nom_fichier):
-    """Compare toutes les morphologies pour une seule méthode."""
     fig, ax = plt.subplots(figsize=(10, 6))
     cmap = plt.get_cmap("tab10")
     morphologies = MORPHOLOGIES_ABR + MORPHOLOGIES_NON_ABR
